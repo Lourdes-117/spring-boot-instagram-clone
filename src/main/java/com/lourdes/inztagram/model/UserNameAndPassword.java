@@ -1,7 +1,5 @@
 package com.lourdes.inztagram.model;
 
-import javax.annotation.Generated;
-
 import lombok.Getter;
 import lombok.Setter;
 
