@@ -1,5 +1,6 @@
 package com.lourdes.inztagram.viewModel;
 
+import java.lang.System.Logger;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -8,6 +9,7 @@ import com.lourdes.inztagram.model.UserDetails;
 import com.lourdes.inztagram.model.UserLoginMapping;
 import com.lourdes.inztagram.repository.UserDetailsRepository;
 import com.lourdes.inztagram.repository.UserLoginMappingRepository;
+import com.lourdes.inztagram.utility.Hashing;
 
 public class UserViewModel {
 
@@ -50,11 +52,25 @@ public class UserViewModel {
     }
 
     public void registerUser(UserDetails userDetails, UserDetailsRepository userDetailsRepository) {
+        try {
+            String hashedPassword = Hashing.hashSha256(userDetails.getPassword());
+            userDetails.setPassword(hashedPassword);
+        } catch(Exception exception) {
+            System.out.println("InztagramLog - ERROR "+ exception.toString());
+        }
         userDetailsRepository.save(userDetails);
     }
 
-    public Optional<String> loginUserAndGetSecretKey(String userName, String password, UserDetailsRepository userDetailsRepository, UserLoginMappingRepository userLoginMappingRepository) {
+    public Optional<String> loginUserAndGetSecretKey(String userName, String passwordUnhashed, UserDetailsRepository userDetailsRepository, UserLoginMappingRepository userLoginMappingRepository) {
         String uuidString = UUID.randomUUID().toString();
+        String password;
+        try {
+            password = Hashing.hashSha256(passwordUnhashed);
+        } catch(Exception exception) {
+            System.out.println("InztagramLog - ERROR "+ exception.toString());
+            return null;
+        }
+
         // Check if user exists
         Optional<UserDetails> userDetailsOptional = userDetailsRepository.findById(userName);
         if(userDetailsOptional.isEmpty()) {
