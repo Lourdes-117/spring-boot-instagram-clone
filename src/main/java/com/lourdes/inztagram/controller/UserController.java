@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -25,6 +27,7 @@ import com.lourdes.inztagram.viewModel.UserViewModel;
 
 @RestController
 public class UserController {
+    private final Logger LOGGER = LoggerFactory.getLogger(UserController.class);
     private UserViewModel viewModel = new UserViewModel();
 
     @Autowired
@@ -37,46 +40,88 @@ public class UserController {
     @PostMapping("/userRegister")
     @ResponseBody
     public ResponseEntity<?> registerUser(@RequestBody UserDetails user) {
+        long startTime = System. currentTimeMillis ();
+        String userExistsError = "{\"error\": \"User Already Exists\"}";
+        String userCreatedSuccess = "{\"success\": \"User Created\"}";
         RegistrationValidationStatus validationStatus = viewModel.validateRegistrationFields(user);
         if(validationStatus != RegistrationValidationStatus.GOOD_TO_GO) {
-            return new ResponseEntity<>("{\"error\":" + viewModel.getRegistrationValidationStatusString(validationStatus) +" }", HttpStatus.BAD_REQUEST);
+            String contextualErrorString = "{\"error\":" + viewModel.getRegistrationValidationStatusString(validationStatus) +" }";
+            long endTime = System.currentTimeMillis ();
+            LOGGER.warn("REQUEST BODY = {}; RESPONSE BODY = {}; TIME TAKEN = {}",
+            user, contextualErrorString, endTime - startTime);
+            return new ResponseEntity<>(contextualErrorString, HttpStatus.BAD_REQUEST);
         }
         if(viewModel.doesUserExist(user.getUserName(), userDetailsRepository)) {
-            return new ResponseEntity<>("{\"error\": \"User Already Exists\"}", HttpStatus.OK);
+            long endTime = System.currentTimeMillis ();
+            LOGGER.warn("REQUEST BODY = {}; RESPONSE BODY = {}; TIME TAKEN = {}",
+            user, userExistsError, endTime - startTime);
+            return new ResponseEntity<>(userExistsError, HttpStatus.OK);
         }
         viewModel.registerUser(user, userDetailsRepository);
-        return new ResponseEntity<>("{\"success\": \"User Created\"}", HttpStatus.OK);
+        long endTime = System.currentTimeMillis ();
+        LOGGER.info("REQUEST BODY = {}; RESPONSE BODY = {}; TIME TAKEN = {}",
+        user, userCreatedSuccess, endTime - startTime);
+        return new ResponseEntity<>(userCreatedSuccess, HttpStatus.OK);
     }
 
     @PostMapping("/login")
     @ResponseBody
     public ResponseEntity<?> loginuser(@RequestBody UserNameAndPassword userNameAndPassword) {
+        long startTime = System. currentTimeMillis ();
+        String pleaseEnterUsernameAndPasswordError = "{\"error\": \"Please Enter Both Username and Password\"}";
+        String invalidUsenameOrPasswordError = "{\"error\": \"Wrong Password or Invlid User\"}";
         if(userNameAndPassword.getUserName() == null || userNameAndPassword.getPassword() == null) {
-            return new ResponseEntity<>("{\"error\": \"Please Enter Both Username and Password\"}", HttpStatus.OK);
+            long endTime = System.currentTimeMillis ();
+            LOGGER.warn("REQUEST BODY = {}; RESPONSE BODY = {}; TIME TAKEN = {}",
+            userNameAndPassword, pleaseEnterUsernameAndPasswordError, endTime - startTime);
+            return new ResponseEntity<>(pleaseEnterUsernameAndPasswordError, HttpStatus.OK);
         }
         Optional<String> uuidStringOptional = viewModel.loginUserAndGetSecretKey(userNameAndPassword.getUserName(), userNameAndPassword.getPassword(), userDetailsRepository, userLoginMappingRepository);
         if(uuidStringOptional == null) {
-            return new ResponseEntity<>("{\"error\": \"Wrong Password or Invlid User\"}", HttpStatus.OK);
+            long endTime = System.currentTimeMillis ();
+            LOGGER.warn("REQUEST BODY = {}; RESPONSE BODY = {}; TIME TAKEN = {}",
+            userNameAndPassword, invalidUsenameOrPasswordError, endTime - startTime);
+            return new ResponseEntity<>(invalidUsenameOrPasswordError, HttpStatus.OK);
         }
         UuidStingOnly uuidStingOnly = new UuidStingOnly();
         uuidStingOnly.setUuid(uuidStringOptional.get());
+        long endTime = System.currentTimeMillis ();
+        LOGGER.warn("REQUEST BODY = {}; RESPONSE BODY = {}; TIME TAKEN = {}",
+        userNameAndPassword, uuidStingOnly, endTime - startTime);
         return new ResponseEntity<>(uuidStingOnly, HttpStatus.OK);
     }
 
     @PostMapping("/upload-post")
     @ResponseBody
     public ResponseEntity<?> uploadPost(@ModelAttribute FileUploadDetailRequest fileUploadDetail) {
+        long startTime = System.currentTimeMillis ();
+        String userUnAuthenticatedError = "{\"error\": \"User Unauthenticated\"}";
+        String noImageAvailableError = "{\"error\": \"No Image Available\"}";
+        String unableToUploadFileError = "{\"error\": \"Unable to upload file\"}";
+        String fileUploadSuccessful = "{\"success\": \"File Uploaded Successfully\"}";
         String randomIdString = UUID.randomUUID().toString();
         if(fileUploadDetail.getUserId() == null) {
-            return new ResponseEntity<>("{\"error\": \"User Unauthenticated\"}", HttpStatus.OK);
+            long endTime = System.currentTimeMillis ();
+            LOGGER.warn("REQUEST BODY = {}; RESPONSE BODY = {}; TIME TAKEN = {}",
+            fileUploadDetail, userUnAuthenticatedError, endTime - startTime);
+            return new ResponseEntity<>(userUnAuthenticatedError, HttpStatus.OK);
         } else if(!viewModel.isUseLoggedIn(fileUploadDetail.getUserId(), userLoginMappingRepository)) {
-            return new ResponseEntity<>("{\"error\": \"User Unauthenticated\"}", HttpStatus.OK);
+            long endTime = System.currentTimeMillis ();
+            LOGGER.warn("REQUEST BODY = {}; RESPONSE BODY = {}; TIME TAKEN = {}",
+            fileUploadDetail, userUnAuthenticatedError, endTime - startTime);
+            return new ResponseEntity<>(userUnAuthenticatedError, HttpStatus.OK);
         } else if(fileUploadDetail.getImageFile() == null){
-            return new ResponseEntity<>("{\"error\": \"No Image Available\"}", HttpStatus.OK);
+            long endTime = System.currentTimeMillis ();
+            LOGGER.warn("REQUEST BODY = {}; RESPONSE BODY = {}; TIME TAKEN = {}",
+            fileUploadDetail, noImageAvailableError, endTime - startTime);
+            return new ResponseEntity<>(noImageAvailableError, HttpStatus.OK);
         } else {
             String uploadFilePath = viewModel.saveImageToFileSystem(fileUploadDetail.getImageFile(), randomIdString);
             if(uploadFilePath == null) {
-                return new ResponseEntity<>("{\"error\": \"Unable to upload file\"}", HttpStatus.OK);
+                long endTime = System.currentTimeMillis ();
+                LOGGER.warn("REQUEST BODY = {}; RESPONSE BODY = {}; TIME TAKEN = {}",
+                fileUploadDetail, unableToUploadFileError, endTime - startTime);
+                return new ResponseEntity<>(unableToUploadFileError, HttpStatus.OK);
             } else {
                 fileUploadDetail.setFileId(randomIdString);
                 fileUploadDetail.setImageFile(null);
@@ -85,7 +130,10 @@ public class UserController {
                 ArrayList<String> likedUsers = new ArrayList<>();
                 fileUploadDetail.setLikes(likedUsers);
                 viewModel.saveImageUploadInfoInDatabase(fileUploadDetail, fileUploadDetailRepository);
-                return new ResponseEntity<>("{\"success\": \"File Uploaded Successfully\"}", HttpStatus.OK);
+                long endTime = System.currentTimeMillis ();
+                LOGGER.info("REQUEST BODY = {}; RESPONSE BODY = {}; TIME TAKEN = {}",
+                fileUploadDetail, fileUploadSuccessful, endTime - startTime);
+                return new ResponseEntity<>(fileUploadSuccessful, HttpStatus.OK);
             }
         }
     }
