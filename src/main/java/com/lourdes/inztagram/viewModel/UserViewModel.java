@@ -1,15 +1,22 @@
 package com.lourdes.inztagram.viewModel;
 
+import java.io.File;
 import java.util.Optional;
 import java.util.UUID;
+
+import org.springframework.web.multipart.MultipartFile;
+
 import com.lourdes.inztagram.enums.RegistrationValidationStatus;
+import com.lourdes.inztagram.model.FileUploadDetailRequest;
 import com.lourdes.inztagram.model.UserDetails;
 import com.lourdes.inztagram.model.UserLoginMapping;
+import com.lourdes.inztagram.repository.FileUploadDetailRepository;
 import com.lourdes.inztagram.repository.UserDetailsRepository;
 import com.lourdes.inztagram.repository.UserLoginMappingRepository;
 import com.lourdes.inztagram.utility.Hashing;
 
 public class UserViewModel {
+    private final String FOLDER_PATH = "/Users/lourdes/Downloads/Server-AttachedFilsSystem/";
 
     public String getRegistrationValidationStatusString(RegistrationValidationStatus status) {
         switch (status) {
@@ -96,5 +103,30 @@ public class UserViewModel {
 
     public Boolean isUseLoggedIn(String userId, UserLoginMappingRepository userLoginMappingRepository) {
         return userLoginMappingRepository.findById(userId).isPresent();
+    }
+
+    public String getUserNameForId(String userId, UserLoginMappingRepository userLoginMappingRepository) {
+        Optional<UserLoginMapping> loginMapping = userLoginMappingRepository.findById(userId);
+        if(loginMapping.isPresent()) {
+            return loginMapping.get().getUsername();
+        } else {
+            return null;
+        }
+    }
+
+    public String saveImageToFileSystem(MultipartFile file, String randomIDString) {
+        if(file == null) { return null;}
+        String filePath = FOLDER_PATH + randomIDString + ".jpeg";
+        try {
+            file.transferTo(new File(filePath));
+        } catch( Exception exception) {
+            System.out.println("InztagramLog - ERROR "+ exception.toString());
+            return null;
+        }
+        return filePath;
+    }
+
+    public void saveImageUploadInfoInDatabase(FileUploadDetailRequest fileUploadDetailRequest, FileUploadDetailRepository fileUploadDetailRepository) {
+        fileUploadDetailRepository.save(fileUploadDetailRequest);
     }
 }
