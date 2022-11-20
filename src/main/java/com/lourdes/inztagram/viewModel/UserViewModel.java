@@ -74,7 +74,6 @@ public class UserViewModel {
         if(userDetailsOptional.isEmpty()) {
             return null;
         }
-        System.out.print("dsfdsf");
         // Validate password
         UserDetails userDetails = userDetailsOptional.get();
         if(!userDetails.getPassword().equals(password)) {
@@ -93,5 +92,9 @@ public class UserViewModel {
         userLoginMapping.setUuid(uuidString);
         userLoginMappingRepository.save(userLoginMapping);
         return Optional.ofNullable(uuidString);
+    }
+
+    public Boolean isUseLoggedIn(String userId, UserLoginMappingRepository userLoginMappingRepository) {
+        return userLoginMappingRepository.findById(userId).isPresent();
     }
 }

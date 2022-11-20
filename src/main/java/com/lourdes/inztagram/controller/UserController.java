@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.lourdes.inztagram.enums.RegistrationValidationStatus;
+import com.lourdes.inztagram.model.FileUploadDetail;
+import com.lourdes.inztagram.model.FileUploadDetailRequest;
 import com.lourdes.inztagram.model.UserDetails;
 import com.lourdes.inztagram.model.UserNameAndPassword;
 import com.lourdes.inztagram.model.UuidStingOnly;
@@ -54,5 +56,17 @@ public class UserController {
         UuidStingOnly uuidStingOnly = new UuidStingOnly();
         uuidStingOnly.setUuid(uuidStringOptional.get());
         return new ResponseEntity<>(uuidStingOnly, HttpStatus.OK);
+    }
+
+    @PostMapping("/upload-post")
+    @ResponseBody
+    public ResponseEntity<?> uploadPost(@RequestBody FileUploadDetailRequest fileUploadDetail) {
+        if(fileUploadDetail.getUserId() == null) {
+            return new ResponseEntity<>("{\"error\": \"User Unauthenticated\"}", HttpStatus.OK);
+        } else if(viewModel.isUseLoggedIn(fileUploadDetail.getUserId(), userLoginMappingRepository)) {
+            return new ResponseEntity<>("{\"error\": \"User Unauthenticated\"}", HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>("{\"error\": \"To be implemented\"}", HttpStatus.OK);
+        }
     }
 }
