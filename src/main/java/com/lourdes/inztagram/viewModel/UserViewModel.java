@@ -1,9 +1,7 @@
 package com.lourdes.inztagram.viewModel;
 
-import java.lang.System.Logger;
 import java.util.Optional;
 import java.util.UUID;
-
 import com.lourdes.inztagram.enums.RegistrationValidationStatus;
 import com.lourdes.inztagram.model.UserDetails;
 import com.lourdes.inztagram.model.UserLoginMapping;

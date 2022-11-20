@@ -32,24 +32,24 @@ public class UserController {
     public ResponseEntity<?> registerUser(@RequestBody UserDetails user) {
         RegistrationValidationStatus validationStatus = viewModel.validateRegistrationFields(user);
         if(validationStatus != RegistrationValidationStatus.GOOD_TO_GO) {
-            return new ResponseEntity<>("{ \"error\":" + viewModel.getRegistrationValidationStatusString(validationStatus) +" }", HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>("{\"error\":" + viewModel.getRegistrationValidationStatusString(validationStatus) +" }", HttpStatus.BAD_REQUEST);
         }
         if(viewModel.doesUserExist(user.getUserName(), userDetailsRepository)) {
-            return new ResponseEntity<>("{ \"error\": \"User Already Exists\"}", HttpStatus.CONFLICT);
+            return new ResponseEntity<>("{\"error\": \"User Already Exists\"}", HttpStatus.OK);
         }
         viewModel.registerUser(user, userDetailsRepository);
-        return new ResponseEntity<>("{ \"success\": \"User Created\"}", HttpStatus.OK);
+        return new ResponseEntity<>("{\"success\": \"User Created\"}", HttpStatus.OK);
     }
 
     @PostMapping("/login")
     @ResponseBody
     public ResponseEntity<?> loginuser(@RequestBody UserNameAndPassword userNameAndPassword) {
         if(userNameAndPassword.getUserName() == null || userNameAndPassword.getPassword() == null) {
-            return new ResponseEntity<>("{ \"error\": \"Please Enter Both Username and Password\"}", HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>("{\"error\": \"Please Enter Both Username and Password\"}", HttpStatus.OK);
         }
         Optional<String> uuidStringOptional = viewModel.loginUserAndGetSecretKey(userNameAndPassword.getUserName(), userNameAndPassword.getPassword(), userDetailsRepository, userLoginMappingRepository);
         if(uuidStringOptional == null) {
-            return new ResponseEntity<>("{ \"error\": \"Wrong Password or Invlid User\"}", HttpStatus.UNAUTHORIZED);
+            return new ResponseEntity<>("{\"error\": \"Wrong Password or Invlid User\"}", HttpStatus.OK);
         }
         UuidStingOnly uuidStingOnly = new UuidStingOnly();
         uuidStingOnly.setUuid(uuidStringOptional.get());
