@@ -9,8 +9,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.aggregation.Aggregation;
-import org.springframework.data.mongodb.core.aggregation.SampleOperation;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -188,9 +186,7 @@ public class UserController {
             getPostsRequest, userUnAuthenticatedError, endTime - startTime);
             return new ResponseEntity<>(userUnAuthenticatedError, HttpStatus.OK);
         }
-        SampleOperation sampleOperation = new SampleOperation(PAGINATION_NUMBER_OF_POSTS_TO_SHOW);
-        Aggregation aggregation = Aggregation.newAggregation(sampleOperation);
-        List<FileUploadDetailRequest> output = mongoTemplate.aggregate(aggregation, COLLECTION_FILE_UPLOAD_MAPPING_NAME, FileUploadDetailRequest.class).getMappedResults();
+        List<FileUploadDetailRequest> output = viewModel.getRandomPosts(PAGINATION_NUMBER_OF_POSTS_TO_SHOW, COLLECTION_FILE_UPLOAD_MAPPING_NAME, mongoTemplate);
         long endTime = System.currentTimeMillis ();
             LOGGER.info("REQUEST BODY = {}; RESPONSE BODY = {}; TIME TAKEN = {}",
             getPostsRequest, output, endTime - startTime);

@@ -2,11 +2,13 @@ package com.lourdes.inztagram.viewModel;
 
 import java.io.File;
 import java.nio.file.Files;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.aggregation.SampleOperation;
 import org.springframework.web.multipart.MultipartFile;
-
 import com.lourdes.inztagram.enums.RegistrationValidationStatus;
 import com.lourdes.inztagram.model.FileUploadDetailRequest;
 import com.lourdes.inztagram.model.UserDetails;
@@ -143,5 +145,12 @@ public class UserViewModel {
             return null;
         }
         return image;
+    }
+
+    public List<FileUploadDetailRequest> getRandomPosts(Integer maxNumberOfPosts, String collectionName, MongoTemplate mongoTemplate) {
+        SampleOperation sampleOperation = new SampleOperation(maxNumberOfPosts);
+        Aggregation aggregation = Aggregation.newAggregation(sampleOperation);
+        List<FileUploadDetailRequest> output = mongoTemplate.aggregate(aggregation, collectionName, FileUploadDetailRequest.class).getMappedResults();
+        return output;
     }
 }
