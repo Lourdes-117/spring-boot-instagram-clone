@@ -8,7 +8,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -16,6 +18,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.lourdes.inztagram.enums.RegistrationValidationStatus;
+import com.lourdes.inztagram.model.FileDownloadDetailsRequest;
 import com.lourdes.inztagram.model.FileUploadDetailRequest;
 import com.lourdes.inztagram.model.UserDetails;
 import com.lourdes.inztagram.model.UserNameAndPassword;
@@ -136,5 +139,32 @@ public class UserController {
                 return new ResponseEntity<>(fileUploadSuccessful, HttpStatus.OK);
             }
         }
+    }
+
+    @GetMapping("/fetch-image")
+    @ResponseBody
+    public ResponseEntity<?> downloadImageFromFileSystem(@RequestBody FileDownloadDetailsRequest fileDownloadDetailsRequest) {
+        long startTime = System.currentTimeMillis ();
+        String userUnAuthenticatedError = "{\"error\": \"User Unauthenticated\"}";
+        String fileNotFoundError = "{\"error\": \"File Not Found\"}";
+        if(!viewModel.isUseLoggedIn(fileDownloadDetailsRequest.getUserId(), userLoginMappingRepository)) {
+            long endTime = System.currentTimeMillis ();
+            LOGGER.info("REQUEST BODY = {}; RESPONSE BODY = {}; TIME TAKEN = {}",
+            fileDownloadDetailsRequest, userUnAuthenticatedError, endTime - startTime);
+            return new ResponseEntity<>(userUnAuthenticatedError, HttpStatus.OK);
+        }
+        byte[] imageData = viewModel.getImageForId(fileDownloadDetailsRequest.getFileId());
+        if(imageData == null) {
+            long endTime = System.currentTimeMillis ();
+            LOGGER.info("REQUEST BODY = {}; RESPONSE BODY = {}; TIME TAKEN = {}",
+            fileDownloadDetailsRequest, fileNotFoundError, endTime - startTime);
+            return new ResponseEntity<>(fileNotFoundError, HttpStatus.OK);
+        }
+        long endTime = System.currentTimeMillis ();
+            LOGGER.info("REQUEST BODY = {}; RESPONSE BODY = {}; TIME TAKEN = {}",
+            fileDownloadDetailsRequest, "image sent successfully", endTime - startTime);
+        return ResponseEntity.status(HttpStatus.OK)
+            . contentType(MediaType.valueOf("image/jpeg"))
+            . body(imageData);
     }
 }

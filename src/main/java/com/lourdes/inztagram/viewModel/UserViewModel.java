@@ -1,6 +1,7 @@
 package com.lourdes.inztagram.viewModel;
 
 import java.io.File;
+import java.nio.file.Files;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -102,6 +103,7 @@ public class UserViewModel {
     }
 
     public Boolean isUseLoggedIn(String userId, UserLoginMappingRepository userLoginMappingRepository) {
+        if(userId == null) { return false; }
         return userLoginMappingRepository.findById(userId).isPresent();
     }
 
@@ -128,5 +130,18 @@ public class UserViewModel {
 
     public void saveImageUploadInfoInDatabase(FileUploadDetailRequest fileUploadDetailRequest, FileUploadDetailRepository fileUploadDetailRepository) {
         fileUploadDetailRepository.save(fileUploadDetailRequest);
+    }
+
+    public byte[] getImageForId(String fileId) {
+        if(fileId == null) { return null; }
+        byte[] image;
+        String filePath = FOLDER_PATH + fileId + ".jpeg";
+        try {
+            image = Files.readAllBytes(new File(filePath).toPath());
+        } catch(Exception exception) {
+            System.out.println("InztagramLog - ERROR "+ exception.toString());
+            return null;
+        }
+        return image;
     }
 }
