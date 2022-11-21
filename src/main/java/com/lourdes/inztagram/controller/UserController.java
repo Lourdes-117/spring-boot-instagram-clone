@@ -158,14 +158,14 @@ public class UserController {
         String fileNotFoundError = "{\"error\": \"File Not Found\"}";
         if(!viewModel.isUseLoggedIn(fileDownloadDetailsRequest.getUserId(), userLoginMappingRepository)) {
             long endTime = System.currentTimeMillis ();
-            LOGGER.info("REQUEST BODY = {}; RESPONSE BODY = {}; TIME TAKEN = {}",
+            LOGGER.warn("REQUEST BODY = {}; RESPONSE BODY = {}; TIME TAKEN = {}",
             fileDownloadDetailsRequest, userUnAuthenticatedError, endTime - startTime);
             return new ResponseEntity<>(userUnAuthenticatedError, HttpStatus.OK);
         }
         byte[] imageData = viewModel.getImageForId(fileDownloadDetailsRequest.getFileId());
         if(imageData == null) {
             long endTime = System.currentTimeMillis ();
-            LOGGER.info("REQUEST BODY = {}; RESPONSE BODY = {}; TIME TAKEN = {}",
+            LOGGER.warn("REQUEST BODY = {}; RESPONSE BODY = {}; TIME TAKEN = {}",
             fileDownloadDetailsRequest, fileNotFoundError, endTime - startTime);
             return new ResponseEntity<>(fileNotFoundError, HttpStatus.OK);
         }
@@ -184,7 +184,7 @@ public class UserController {
         String userUnAuthenticatedError = "{\"error\": \"User Unauthenticated\"}";
         if(!viewModel.isUseLoggedIn(getPostsRequest.getUserId(), userLoginMappingRepository)) {
             long endTime = System.currentTimeMillis ();
-            LOGGER.info("REQUEST BODY = {}; RESPONSE BODY = {}; TIME TAKEN = {}",
+            LOGGER.warn("REQUEST BODY = {}; RESPONSE BODY = {}; TIME TAKEN = {}",
             getPostsRequest, userUnAuthenticatedError, endTime - startTime);
             return new ResponseEntity<>(userUnAuthenticatedError, HttpStatus.OK);
         }
