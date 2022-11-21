@@ -1,12 +1,16 @@
 package com.lourdes.inztagram.controller;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.aggregation.SampleOperation;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -16,10 +20,10 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
-
 import com.lourdes.inztagram.enums.RegistrationValidationStatus;
 import com.lourdes.inztagram.model.FileDownloadDetailsRequest;
 import com.lourdes.inztagram.model.FileUploadDetailRequest;
+import com.lourdes.inztagram.model.GetPostsRequest;
 import com.lourdes.inztagram.model.UserDetails;
 import com.lourdes.inztagram.model.UserNameAndPassword;
 import com.lourdes.inztagram.model.UuidStingOnly;
@@ -30,6 +34,9 @@ import com.lourdes.inztagram.viewModel.UserViewModel;
 
 @RestController
 public class UserController {
+    private final Integer PAGINATION_NUMBER_OF_POSTS_TO_SHOW = 8;
+    private final String COLLECTION_FILE_UPLOAD_MAPPING_NAME = "FileUploadMapping";
+
     private final Logger LOGGER = LoggerFactory.getLogger(UserController.class);
     private UserViewModel viewModel = new UserViewModel();
 
@@ -39,6 +46,8 @@ public class UserController {
     private UserLoginMappingRepository userLoginMappingRepository;
     @Autowired
     private FileUploadDetailRepository fileUploadDetailRepository;
+    @Autowired
+    private MongoTemplate mongoTemplate;
 
     @PostMapping("/userRegister")
     @ResponseBody
@@ -166,5 +175,25 @@ public class UserController {
         return ResponseEntity.status(HttpStatus.OK)
             . contentType(MediaType.valueOf("image/jpeg"))
             . body(imageData);
+    }
+
+    @GetMapping("/get-posts")
+    @ResponseBody
+    public ResponseEntity<?> getInztaPosts(@RequestBody GetPostsRequest getPostsRequest) {
+        long startTime = System.currentTimeMillis ();
+        String userUnAuthenticatedError = "{\"error\": \"User Unauthenticated\"}";
+        if(!viewModel.isUseLoggedIn(getPostsRequest.getUserId(), userLoginMappingRepository)) {
+            long endTime = System.currentTimeMillis ();
+            LOGGER.info("REQUEST BODY = {}; RESPONSE BODY = {}; TIME TAKEN = {}",
+            getPostsRequest, userUnAuthenticatedError, endTime - startTime);
+            return new ResponseEntity<>(userUnAuthenticatedError, HttpStatus.OK);
+        }
+        SampleOperation sampleOperation = new SampleOperation(PAGINATION_NUMBER_OF_POSTS_TO_SHOW);
+        Aggregation aggregation = Aggregation.newAggregation(sampleOperation);
+        List<FileUploadDetailRequest> output = mongoTemplate.aggregate(aggregation, COLLECTION_FILE_UPLOAD_MAPPING_NAME, FileUploadDetailRequest.class).getMappedResults();
+        long endTime = System.currentTimeMillis ();
+            LOGGER.info("REQUEST BODY = {}; RESPONSE BODY = {}; TIME TAKEN = {}",
+            getPostsRequest, output, endTime - startTime);
+        return new ResponseEntity<>(output, HttpStatus.OK);
     }
 }
