@@ -118,6 +118,10 @@ public class UserViewModel {
         }
     }
 
+    public Optional<UserDetails> getDetailsOfUserName(String userName, UserDetailsRepository userDetailsRepository) {
+        return userDetailsRepository.findById(userName);
+    }
+
     public String saveImageToFileSystem(MultipartFile file, String randomIDString) {
         if(file == null) { return null;}
         String filePath = FOLDER_PATH + randomIDString + ".jpeg";

@@ -16,11 +16,13 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import com.lourdes.inztagram.enums.RegistrationValidationStatus;
 import com.lourdes.inztagram.model.FileDownloadDetailsRequest;
 import com.lourdes.inztagram.model.FileUploadDetailRequest;
+import com.lourdes.inztagram.model.GetDetailsOfUserRequest;
 import com.lourdes.inztagram.model.GetPostsRequest;
 import com.lourdes.inztagram.model.UserDetails;
 import com.lourdes.inztagram.model.UserNameAndPassword;
@@ -148,6 +150,32 @@ public class UserController {
         }
     }
 
+    @PostMapping("/getDetailsOfUser")
+    @ResponseBody
+    public ResponseEntity<?> getDetailsOfUser(@RequestBody GetDetailsOfUserRequest getDetailsOfUserRequest) {
+        long startTime = System.currentTimeMillis();
+        String userUnAuthenticatedError = "{\"error\": \"User Unauthenticated\"}";
+        String userNotFoundError = "{\"error\": \"User Not Found\"}";
+        if(!viewModel.isUseLoggedIn(getDetailsOfUserRequest.getRequestingUserId(), userLoginMappingRepository)) {
+            long endTime = System.currentTimeMillis();
+            LOGGER.warn("REQUEST BODY = {}; RESPONSE BODY = {}; TIME TAKEN = {}",
+            getDetailsOfUserRequest, userUnAuthenticatedError, endTime - startTime);
+            return new ResponseEntity<>(userUnAuthenticatedError, HttpStatus.OK);
+        }
+        Optional<UserDetails> userDeatilsOptional = viewModel.getDetailsOfUserName(getDetailsOfUserRequest.getUserNameToGetDetails(), userDetailsRepository);
+        if(userDeatilsOptional.isPresent()) {
+            long endTime = System.currentTimeMillis();
+            LOGGER.info("REQUEST BODY = {}; RESPONSE BODY = {}; TIME TAKEN = {}",
+            getDetailsOfUserRequest, userDeatilsOptional.get(), endTime - startTime);
+            return new ResponseEntity<>(userDeatilsOptional.get(), HttpStatus.OK);
+        } else {
+            long endTime = System.currentTimeMillis();
+            LOGGER.warn("REQUEST BODY = {}; RESPONSE BODY = {}; TIME TAKEN = {}",
+            getDetailsOfUserRequest, userNotFoundError, endTime - startTime);
+            return new ResponseEntity<>(userNotFoundError, HttpStatus.OK);
+        }
+    }
+
     @GetMapping("/fetch-image")
     @ResponseBody
     public ResponseEntity<?> downloadImageFromFileSystem(@RequestBody FileDownloadDetailsRequest fileDownloadDetailsRequest) {
@@ -175,7 +203,35 @@ public class UserController {
             . body(imageData);
     }
 
-    @GetMapping("/get-posts")
+    @GetMapping("/fetch-image-query")
+    @ResponseBody
+    public ResponseEntity<?> downloadImageFromFileSystemQueryparams(@RequestParam String userId, String fileId) {
+        long startTime = System.currentTimeMillis ();
+        String userUnAuthenticatedError = "{\"error\": \"User Unauthenticated\"}";
+        String fileNotFoundError = "{\"error\": \"File Not Found\"}";
+        if(!viewModel.isUseLoggedIn(userId, userLoginMappingRepository)) {
+            long endTime = System.currentTimeMillis ();
+            LOGGER.warn("Query Param - UserID = {}, File ID = {} ; RESPONSE BODY = {}; TIME TAKEN = {}",
+            userId, fileId, userUnAuthenticatedError, endTime - startTime);
+            return new ResponseEntity<>(userUnAuthenticatedError, HttpStatus.OK);
+        }
+        byte[] imageData = viewModel.getImageForId(fileId);
+        if(imageData == null) {
+            long endTime = System.currentTimeMillis ();
+            LOGGER.warn("Query Param - UserID = {}, File ID = {} ; RESPONSE BODY = {}; TIME TAKEN = {}",
+            userId, fileId, fileNotFoundError, endTime - startTime);
+            return new ResponseEntity<>(fileNotFoundError, HttpStatus.OK);
+        }
+        long endTime = System.currentTimeMillis ();
+            LOGGER.info("Query Param - UserID = {}, File ID = {} ; RESPONSE BODY = {}; TIME TAKEN = {}",
+            userId, fileId, "image sent successfully", endTime - startTime);
+        return ResponseEntity.status(HttpStatus.OK)
+            . contentType(MediaType.valueOf("image/jpeg"))
+            . body(imageData);
+    }
+
+
+    @PostMapping("/get-posts")
     @ResponseBody
     public ResponseEntity<?> getInztaPosts(@RequestBody GetPostsRequest getPostsRequest) {
         long startTime = System.currentTimeMillis ();
