@@ -24,6 +24,7 @@ import com.lourdes.inztagram.model.FileDownloadDetailsRequest;
 import com.lourdes.inztagram.model.FileUploadDetailRequest;
 import com.lourdes.inztagram.model.GetDetailsOfUserRequest;
 import com.lourdes.inztagram.model.GetPostsRequest;
+import com.lourdes.inztagram.model.LikePostRequest;
 import com.lourdes.inztagram.model.UploadProfilePhotoRequest;
 import com.lourdes.inztagram.model.UserDetails;
 import com.lourdes.inztagram.model.UserNameAndPassword;
@@ -310,5 +311,41 @@ public class UserController {
             LOGGER.info("REQUEST BODY = {}; RESPONSE BODY = {}; TIME TAKEN = {}",
             getPostsRequest, output, endTime - startTime);
         return new ResponseEntity<>(output, HttpStatus.OK);
+    }
+
+    @PostMapping("/like-or-unlike-post")
+    @ResponseBody
+    public ResponseEntity<?> likeOrUnlikePost(@RequestBody LikePostRequest likePostRequest) {
+        long startTime = System.currentTimeMillis ();
+        String userUnAuthenticatedError = "{\"error\": \"User Unauthenticated\"}";
+        String fileNotFoundError = "{\"error\": \"File Not Found\"}";
+        String likeOrUnlikeSuccessful = "{\"success\": \"Like or Unlike Successful\"}";
+        String unknownError = "{\"error\": \"Unknown Error In Like Or Unlike\"}";
+        if(!viewModel.isUseLoggedIn(likePostRequest.getUserId(), userLoginMappingRepository)) {
+            long endTime = System.currentTimeMillis ();
+            LOGGER.warn("REQUEST BODY = {}; RESPONSE BODY = {}; TIME TAKEN = {}",
+            likePostRequest, userUnAuthenticatedError, endTime - startTime);
+            return new ResponseEntity<>(userUnAuthenticatedError, HttpStatus.OK);
+        }
+        String userName = viewModel.getUserNameForId(likePostRequest.getUserId(), userLoginMappingRepository);
+        Optional<FileUploadDetailRequest> postOptional = viewModel.getPostById(likePostRequest.getPostId(), fileUploadDetailRepository);
+        if(!postOptional.isPresent()) {
+            long endTime = System.currentTimeMillis ();
+            LOGGER.warn("REQUEST BODY = {}; RESPONSE BODY = {}; TIME TAKEN = {}",
+            likePostRequest, fileNotFoundError, endTime - startTime);
+            return new ResponseEntity<>(fileNotFoundError, HttpStatus.OK);
+        }
+        FileUploadDetailRequest post = postOptional.get();
+        Boolean success = viewModel.likeOrUnlikePostAndReturnArray(post, userName, fileUploadDetailRepository);
+        if(!success) {
+            long endTime = System.currentTimeMillis ();
+            LOGGER.warn("REQUEST BODY = {}; RESPONSE BODY = {}; TIME TAKEN = {}",
+            likePostRequest, unknownError, endTime - startTime);
+            return new ResponseEntity<>(unknownError, HttpStatus.OK);
+        }
+        long endTime = System.currentTimeMillis ();
+        LOGGER.warn("REQUEST BODY = {}; RESPONSE BODY = {}; TIME TAKEN = {}",
+            likePostRequest, likeOrUnlikeSuccessful, endTime - startTime);
+            return new ResponseEntity<>(likeOrUnlikeSuccessful, HttpStatus.OK);
     }
 }

@@ -2,6 +2,7 @@ package com.lourdes.inztagram.viewModel;
 
 import java.io.File;
 import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -182,5 +183,23 @@ public class UserViewModel {
         Aggregation aggregation = Aggregation.newAggregation(sampleOperation);
         List<FileUploadDetailRequest> output = mongoTemplate.aggregate(aggregation, collectionName, FileUploadDetailRequest.class).getMappedResults();
         return output;
+    }
+
+    public Optional<FileUploadDetailRequest> getPostById(String fileId, FileUploadDetailRepository fileUploadDetailRepository) {
+        return fileUploadDetailRepository.findById(fileId);
+    }
+
+    public Boolean likeOrUnlikePostAndReturnArray(FileUploadDetailRequest file, String userName, FileUploadDetailRepository fileUploadDetailRepository) {
+        ArrayList<String> previouslyLikedUsers = file.getLikes();
+        if(previouslyLikedUsers == null) {
+            previouslyLikedUsers = new ArrayList<String>();
+        }
+        if(previouslyLikedUsers.remove(userName)) {
+        } else {
+            previouslyLikedUsers.add(userName);
+        }
+        file.setLikes(previouslyLikedUsers);
+        fileUploadDetailRepository.save(file);
+        return true;
     }
 }
