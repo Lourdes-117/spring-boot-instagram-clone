@@ -20,6 +20,7 @@ import com.lourdes.inztagram.utility.Hashing;
 
 public class UserViewModel {
     private final String FOLDER_PATH = "/Users/lourdes/Downloads/Server-AttachedFilsSystem/";
+    private final String FOLDER_PATH_PROFILE = "/Users/lourdes/Downloads/Server-AttachedFilsSystem/profile-photos/";
 
     public String getRegistrationValidationStatusString(RegistrationValidationStatus status) {
         switch (status) {
@@ -134,6 +135,18 @@ public class UserViewModel {
         return filePath;
     }
 
+    public String saveProfilePhotoToFileSystem(MultipartFile file, String userName) {
+        if(file == null) { return null;}
+        String filePath = FOLDER_PATH_PROFILE + userName + ".jpeg";
+        try {
+            file.transferTo(new File(filePath));
+        } catch( Exception exception) {
+            System.out.println("InztagramLog - ERROR "+ exception.toString());
+            return null;
+        }
+        return filePath;
+    }
+
     public void saveImageUploadInfoInDatabase(FileUploadDetailRequest fileUploadDetailRequest, FileUploadDetailRepository fileUploadDetailRepository) {
         fileUploadDetailRepository.save(fileUploadDetailRequest);
     }
@@ -142,6 +155,19 @@ public class UserViewModel {
         if(fileId == null) { return null; }
         byte[] image;
         String filePath = FOLDER_PATH + fileId + ".jpeg";
+        try {
+            image = Files.readAllBytes(new File(filePath).toPath());
+        } catch(Exception exception) {
+            System.out.println("InztagramLog - ERROR "+ exception.toString());
+            return null;
+        }
+        return image;
+    }
+
+    public byte[] getImageProfilePhotoForUserName(String userNae) {
+        if(userNae == null) { return null; }
+        byte[] image;
+        String filePath = FOLDER_PATH_PROFILE + userNae + ".jpeg";
         try {
             image = Files.readAllBytes(new File(filePath).toPath());
         } catch(Exception exception) {

@@ -24,6 +24,7 @@ import com.lourdes.inztagram.model.FileDownloadDetailsRequest;
 import com.lourdes.inztagram.model.FileUploadDetailRequest;
 import com.lourdes.inztagram.model.GetDetailsOfUserRequest;
 import com.lourdes.inztagram.model.GetPostsRequest;
+import com.lourdes.inztagram.model.UploadProfilePhotoRequest;
 import com.lourdes.inztagram.model.UserDetails;
 import com.lourdes.inztagram.model.UserNameAndPassword;
 import com.lourdes.inztagram.model.UuidStingOnly;
@@ -103,6 +104,66 @@ public class UserController {
         return new ResponseEntity<>(uuidStingOnly, HttpStatus.OK);
     }
 
+    @PostMapping("/upload-profile-photo")
+    @ResponseBody
+    public ResponseEntity<?> uploadProfilePhoto(@ModelAttribute UploadProfilePhotoRequest uploadProfilePhotoRequest) {
+        long startTime = System.currentTimeMillis ();
+        String userUnAuthenticatedError = "{\"error\": \"User Unauthenticated\"}";
+        String noImageAvailableError = "{\"error\": \"No Image Available\"}";
+        String profilePhotoUploadSuccessful = "{\"success\": \"Profile Photo Uploaded Successfully\"}";
+        LOGGER.info("EnteringDUDEEEEEEEE");
+        if(uploadProfilePhotoRequest.getUserId() == null) {
+            long endTime = System.currentTimeMillis ();
+            LOGGER.warn("REQUEST BODY = {}; RESPONSE BODY = {}; TIME TAKEN = {}",
+            uploadProfilePhotoRequest, userUnAuthenticatedError, endTime - startTime);
+            return new ResponseEntity<>(userUnAuthenticatedError, HttpStatus.OK);
+        } else if(!viewModel.isUseLoggedIn(uploadProfilePhotoRequest.getUserId(), userLoginMappingRepository)) {
+            long endTime = System.currentTimeMillis ();
+            LOGGER.warn("REQUEST BODY = {}; RESPONSE BODY = {}; TIME TAKEN = {}",
+            uploadProfilePhotoRequest, userUnAuthenticatedError, endTime - startTime);
+            return new ResponseEntity<>(userUnAuthenticatedError, HttpStatus.OK);
+        } else if(uploadProfilePhotoRequest.getImageFile() == null){
+            long endTime = System.currentTimeMillis ();
+            LOGGER.warn("REQUEST BODY = {}; RESPONSE BODY = {}; TIME TAKEN = {}",
+            uploadProfilePhotoRequest, noImageAvailableError, endTime - startTime);
+            return new ResponseEntity<>(noImageAvailableError, HttpStatus.OK);
+        } else {
+            String userName = viewModel.getUserNameForId(uploadProfilePhotoRequest.getUserId(), userLoginMappingRepository);
+            viewModel.saveProfilePhotoToFileSystem(uploadProfilePhotoRequest.getImageFile(), userName);
+            long endTime = System.currentTimeMillis ();
+            LOGGER.info("REQUEST BODY = {}; RESPONSE BODY = {}; TIME TAKEN = {}",
+            uploadProfilePhotoRequest, profilePhotoUploadSuccessful, endTime - startTime);
+            return new ResponseEntity<>(profilePhotoUploadSuccessful, HttpStatus.OK);
+        }
+    }
+
+    @GetMapping("/fetch-profile-photo")
+    @ResponseBody
+    public ResponseEntity<?> getProfilePhoto(@RequestParam String userId, String neededUserName) {
+        long startTime = System.currentTimeMillis ();
+        String userUnAuthenticatedError = "{\"error\": \"User Unauthenticated\"}";
+        String profilePhotoNotFound = "{\"error\": \"Profile Photo Not Found\"}";
+        if(!viewModel.isUseLoggedIn(userId, userLoginMappingRepository)) {
+            long endTime = System.currentTimeMillis ();
+            LOGGER.warn("Query Param - UserID = {}, Needed User Id = {} ; RESPONSE BODY = {}; TIME TAKEN = {}",
+            userId, neededUserName, userUnAuthenticatedError, endTime - startTime);
+            return new ResponseEntity<>(userUnAuthenticatedError, HttpStatus.OK);
+        }
+        byte[] imageData = viewModel.getImageProfilePhotoForUserName(neededUserName);
+        if(imageData == null) {
+            long endTime = System.currentTimeMillis ();
+            LOGGER.warn("Query Param - UserID = {}, Needed User Id = {} ; RESPONSE BODY = {}; TIME TAKEN = {}",
+            userId, neededUserName, profilePhotoNotFound, endTime - startTime);
+            return new ResponseEntity<>(profilePhotoNotFound, HttpStatus.OK);
+        }
+        long endTime = System.currentTimeMillis ();
+        LOGGER.warn("Query Param - UserID = {}, Needed User Id = {} ; RESPONSE BODY = {}; TIME TAKEN = {}",
+        userId, neededUserName, "image sent successfully", endTime - startTime);
+        return ResponseEntity.status(HttpStatus.OK)
+            . contentType(MediaType.valueOf("image/jpeg"))
+            . body(imageData);
+    }
+
     @PostMapping("/upload-post")
     @ResponseBody
     public ResponseEntity<?> uploadPost(@ModelAttribute FileUploadDetailRequest fileUploadDetail) {
@@ -164,10 +225,12 @@ public class UserController {
         }
         Optional<UserDetails> userDeatilsOptional = viewModel.getDetailsOfUserName(getDetailsOfUserRequest.getUserNameToGetDetails(), userDetailsRepository);
         if(userDeatilsOptional.isPresent()) {
+            UserDetails userDetails = userDeatilsOptional.get();
+            userDetails.setPassword(null);
             long endTime = System.currentTimeMillis();
             LOGGER.info("REQUEST BODY = {}; RESPONSE BODY = {}; TIME TAKEN = {}",
-            getDetailsOfUserRequest, userDeatilsOptional.get(), endTime - startTime);
-            return new ResponseEntity<>(userDeatilsOptional.get(), HttpStatus.OK);
+            getDetailsOfUserRequest, userDetails, endTime - startTime);
+            return new ResponseEntity<>(userDetails, HttpStatus.OK);
         } else {
             long endTime = System.currentTimeMillis();
             LOGGER.warn("REQUEST BODY = {}; RESPONSE BODY = {}; TIME TAKEN = {}",
