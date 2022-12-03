@@ -10,7 +10,6 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.aggregation.MatchOperation;
 import org.springframework.data.mongodb.core.aggregation.SampleOperation;
-import org.springframework.data.mongodb.core.aggregation.SortOperation;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.web.multipart.MultipartFile;
 import com.lourdes.inztagram.enums.RegistrationValidationStatus;
@@ -21,7 +20,6 @@ import com.lourdes.inztagram.repository.FileUploadDetailRepository;
 import com.lourdes.inztagram.repository.UserDetailsRepository;
 import com.lourdes.inztagram.repository.UserLoginMappingRepository;
 import com.lourdes.inztagram.utility.Hashing;
-import com.mongodb.internal.operation.AggregateOperation;
 
 public class UserViewModel {
     private final String FOLDER_PATH = "/Users/lourdes/Downloads/Server-AttachedFilsSystem/";
@@ -108,6 +106,15 @@ public class UserViewModel {
         userLoginMapping.setUuid(uuidString);
         userLoginMappingRepository.save(userLoginMapping);
         return Optional.ofNullable(uuidString);
+    }
+
+    public Boolean logoutUser(String userId, UserLoginMappingRepository userLoginMappingRepository) {
+        if(isUseLoggedIn(userId, userLoginMappingRepository)) {
+            userLoginMappingRepository.deleteById(userId);
+            return true;
+        } else {
+            return false;
+        }
     }
 
     public Boolean isUseLoggedIn(String userId, UserLoginMappingRepository userLoginMappingRepository) {

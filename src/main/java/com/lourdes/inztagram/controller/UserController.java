@@ -26,6 +26,7 @@ import com.lourdes.inztagram.model.GetDetailsOfUserRequest;
 import com.lourdes.inztagram.model.GetPostsOfUserRequest;
 import com.lourdes.inztagram.model.GetPostsRequest;
 import com.lourdes.inztagram.model.LikePostRequest;
+import com.lourdes.inztagram.model.LogoutUserRequest;
 import com.lourdes.inztagram.model.UploadProfilePhotoRequest;
 import com.lourdes.inztagram.model.UserDetails;
 import com.lourdes.inztagram.model.UserNameAndPassword;
@@ -81,7 +82,7 @@ public class UserController {
 
     @PostMapping("/login")
     @ResponseBody
-    public ResponseEntity<?> loginuser(@RequestBody UserNameAndPassword userNameAndPassword) {
+    public ResponseEntity<?> loginUser(@RequestBody UserNameAndPassword userNameAndPassword) {
         long startTime = System. currentTimeMillis ();
         String pleaseEnterUsernameAndPasswordError = "{\"error\": \"Please Enter Both Username and Password\"}";
         String invalidUsenameOrPasswordError = "{\"error\": \"Wrong Password or Invlid User\"}";
@@ -106,6 +107,32 @@ public class UserController {
         return new ResponseEntity<>(uuidStingOnly, HttpStatus.OK);
     }
 
+    @PostMapping("/logout")
+    @ResponseBody
+    public ResponseEntity<?> logoutUser(@RequestBody LogoutUserRequest logoutUserRequest) {
+        long startTime = System. currentTimeMillis ();
+        String useridNotAvailableError = "{\"error\": \"UserID Not Available\"}";
+        String userNotAuthenticatedError = "{\"error\": \"User Not Authenticated\"}";
+        String logoutSuccess = "{\"success\": \"User User Logout Successful\"}";
+        if(logoutUserRequest.getUserId() == null) {
+            long endTime = System.currentTimeMillis ();
+            LOGGER.warn("REQUEST BODY = {}; RESPONSE BODY = {}; TIME TAKEN = {}",
+            logoutUserRequest, useridNotAvailableError, endTime - startTime);
+            return new ResponseEntity<>(useridNotAvailableError, HttpStatus.OK);
+        }
+        if(viewModel.logoutUser(logoutUserRequest.getUserId(), userLoginMappingRepository)) {
+            long endTime = System.currentTimeMillis ();
+            LOGGER.warn("REQUEST BODY = {}; RESPONSE BODY = {}; TIME TAKEN = {}",
+            logoutSuccess, useridNotAvailableError, endTime - startTime);
+            return new ResponseEntity<>(logoutSuccess, HttpStatus.OK);
+        } else {
+            long endTime = System.currentTimeMillis ();
+            LOGGER.warn("REQUEST BODY = {}; RESPONSE BODY = {}; TIME TAKEN = {}",
+            logoutUserRequest, userNotAuthenticatedError, endTime - startTime);
+            return new ResponseEntity<>(userNotAuthenticatedError, HttpStatus.OK);
+        }
+    }
+
     @PostMapping("/upload-profile-photo")
     @ResponseBody
     public ResponseEntity<?> uploadProfilePhoto(@ModelAttribute UploadProfilePhotoRequest uploadProfilePhotoRequest) {
@@ -113,7 +140,6 @@ public class UserController {
         String userUnAuthenticatedError = "{\"error\": \"User Unauthenticated\"}";
         String noImageAvailableError = "{\"error\": \"No Image Available\"}";
         String profilePhotoUploadSuccessful = "{\"success\": \"Profile Photo Uploaded Successfully\"}";
-        LOGGER.info("EnteringDUDEEEEEEEE");
         if(uploadProfilePhotoRequest.getUserId() == null) {
             long endTime = System.currentTimeMillis ();
             LOGGER.warn("REQUEST BODY = {}; RESPONSE BODY = {}; TIME TAKEN = {}",
