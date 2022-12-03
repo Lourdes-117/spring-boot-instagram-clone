@@ -8,7 +8,10 @@ import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.aggregation.MatchOperation;
 import org.springframework.data.mongodb.core.aggregation.SampleOperation;
+import org.springframework.data.mongodb.core.aggregation.SortOperation;
+import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.web.multipart.MultipartFile;
 import com.lourdes.inztagram.enums.RegistrationValidationStatus;
 import com.lourdes.inztagram.model.FileUploadDetailRequest;
@@ -18,6 +21,7 @@ import com.lourdes.inztagram.repository.FileUploadDetailRepository;
 import com.lourdes.inztagram.repository.UserDetailsRepository;
 import com.lourdes.inztagram.repository.UserLoginMappingRepository;
 import com.lourdes.inztagram.utility.Hashing;
+import com.mongodb.internal.operation.AggregateOperation;
 
 public class UserViewModel {
     private final String FOLDER_PATH = "/Users/lourdes/Downloads/Server-AttachedFilsSystem/";
@@ -184,6 +188,30 @@ public class UserViewModel {
         List<FileUploadDetailRequest> output = mongoTemplate.aggregate(aggregation, collectionName, FileUploadDetailRequest.class).getMappedResults();
         return output;
     }
+
+    public List<FileUploadDetailRequest> getPostsOfUser(Integer maxNumberOfPosts, Integer pagination, String userNameToGet, String collectionName, MongoTemplate mongoTemplate) {
+        MatchOperation matchOperation = new MatchOperation(Criteria.where("userName").is(userNameToGet));
+        Aggregation aggregation = Aggregation.newAggregation(matchOperation);
+        List<FileUploadDetailRequest> postsOfUser = mongoTemplate.aggregate(aggregation, collectionName, FileUploadDetailRequest.class).getMappedResults();
+        if(postsOfUser == null) { return null; }
+        int startIndex = 0;
+        int endIndex = 0;
+        if(pagination < 0) {
+            pagination = 0;
+        }
+        if(postsOfUser.size() >= maxNumberOfPosts * pagination) {
+            startIndex = maxNumberOfPosts * pagination;
+            endIndex = maxNumberOfPosts * pagination;
+        } else {
+            return new ArrayList<>();
+        }
+        if(postsOfUser.size() > endIndex+maxNumberOfPosts) {
+            endIndex = endIndex+maxNumberOfPosts;
+        }
+        List<FileUploadDetailRequest> output = postsOfUser.subList(startIndex, endIndex);
+        return output;
+    }
+
 
     public Optional<FileUploadDetailRequest> getPostById(String fileId, FileUploadDetailRepository fileUploadDetailRepository) {
         return fileUploadDetailRepository.findById(fileId);

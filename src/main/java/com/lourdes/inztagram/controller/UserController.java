@@ -23,6 +23,7 @@ import com.lourdes.inztagram.enums.RegistrationValidationStatus;
 import com.lourdes.inztagram.model.FileDownloadDetailsRequest;
 import com.lourdes.inztagram.model.FileUploadDetailRequest;
 import com.lourdes.inztagram.model.GetDetailsOfUserRequest;
+import com.lourdes.inztagram.model.GetPostsOfUserRequest;
 import com.lourdes.inztagram.model.GetPostsRequest;
 import com.lourdes.inztagram.model.LikePostRequest;
 import com.lourdes.inztagram.model.UploadProfilePhotoRequest;
@@ -307,6 +308,38 @@ public class UserController {
             return new ResponseEntity<>(userUnAuthenticatedError, HttpStatus.OK);
         }
         List<FileUploadDetailRequest> output = viewModel.getRandomPosts(PAGINATION_NUMBER_OF_POSTS_TO_SHOW, COLLECTION_FILE_UPLOAD_MAPPING_NAME, mongoTemplate);
+        long endTime = System.currentTimeMillis ();
+            LOGGER.info("REQUEST BODY = {}; RESPONSE BODY = {}; TIME TAKEN = {}",
+            getPostsRequest, output, endTime - startTime);
+        return new ResponseEntity<>(output, HttpStatus.OK);
+    }
+
+    @PostMapping("/get-posts-user")
+    @ResponseBody
+    public ResponseEntity<?> getInztaPostsOfUser(@RequestBody GetPostsOfUserRequest getPostsRequest) {
+        long startTime = System.currentTimeMillis ();
+        String userUnAuthenticatedError = "{\"error\": \"User Unauthenticated\"}";
+        String noPostsFoundError = "{\"error\": \"No Posts Found\"}";
+        if(!viewModel.isUseLoggedIn(getPostsRequest.getUserId(), userLoginMappingRepository)) {
+            long endTime = System.currentTimeMillis ();
+            LOGGER.warn("REQUEST BODY = {}; RESPONSE BODY = {}; TIME TAKEN = {}",
+            getPostsRequest, userUnAuthenticatedError, endTime - startTime);
+            return new ResponseEntity<>(userUnAuthenticatedError, HttpStatus.OK);
+        }
+
+        List<FileUploadDetailRequest> output = viewModel.getPostsOfUser(
+            PAGINATION_NUMBER_OF_POSTS_TO_SHOW, getPostsRequest.getPagination(), 
+            getPostsRequest.getUserNameNeeded(), 
+            COLLECTION_FILE_UPLOAD_MAPPING_NAME, 
+            mongoTemplate
+            );
+        if(output == null) {
+            long endTime = System.currentTimeMillis ();
+            LOGGER.info("REQUEST BODY = {}; RESPONSE BODY = {}; TIME TAKEN = {}",
+            getPostsRequest, noPostsFoundError, endTime - startTime);
+        return new ResponseEntity<>(noPostsFoundError, HttpStatus.OK);
+        }
+
         long endTime = System.currentTimeMillis ();
             LOGGER.info("REQUEST BODY = {}; RESPONSE BODY = {}; TIME TAKEN = {}",
             getPostsRequest, output, endTime - startTime);
