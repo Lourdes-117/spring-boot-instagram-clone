@@ -207,6 +207,8 @@ public class UserViewModel {
         }
         if(postsOfUser.size() > endIndex+maxNumberOfPosts) {
             endIndex = endIndex+maxNumberOfPosts;
+        } else {
+            endIndex = postsOfUser.size();
         }
         List<FileUploadDetailRequest> output = postsOfUser.subList(startIndex, endIndex);
         return output;
